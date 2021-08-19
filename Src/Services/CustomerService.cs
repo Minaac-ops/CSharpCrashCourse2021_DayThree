@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection.Metadata;
 using CrashCourse2021ExercisesDayThree.DB.Impl;
 using CrashCourse2021ExercisesDayThree.Models;
 
@@ -16,26 +18,47 @@ namespace CrashCourse2021ExercisesDayThree.Services
         //Create and return a Customer Object with all incoming properties (no ID)
         internal Customer Create(string firstName, string lastName, DateTime birthDate)
         {
-            throw new NotImplementedException();
+            if (firstName.Length < 2)
+            {
+                throw new ArgumentException(Constants.FirstNameException);
+            }
+            Customer customer = new Customer
+            {
+                FirstName = firstName,
+                LastName = lastName,
+                BirthDate = birthDate
+            };
+            return customer;
         }
 
         //db has an Add function to add a new customer!! :D
         //We can reuse the Create function above..
         internal Customer CreateAndAdd(string firstName, string lastName, DateTime birthDate)
         {
-            throw new NotImplementedException();
+            Customer customer = new Customer();
+            customer.FirstName = firstName;
+            customer.LastName = lastName;
+            customer.BirthDate = birthDate;
+            db.AddCustomer(customer);
+            return customer;
         }
 
         //Simple enough, Get the customers from the "Database" (db)
         internal List<Customer> GetCustomers()
         {
-            throw new NotImplementedException();
+            List<Customer> allCustomer = db.GetCustomers();
+            return allCustomer;
         }
 
         //Maybe Check out how to find in a LIST in c# Maybe there is a Find function?
         public Customer FindCustomer(int customerId)
         {
-            throw new NotImplementedException();
+            if (customerId < 0)
+            {
+                throw new InvalidDataException(Constants.CustomerIdMustBeAboveZero);
+            }
+            var findCustomer = db.GetCustomers().Find(c => c.Id == customerId);
+            return findCustomer;
         }
         
         /*So many things can go wrong here...
@@ -49,7 +72,61 @@ namespace CrashCourse2021ExercisesDayThree.Services
         */
         public List<Customer> SearchCustomer(string searchField, string searchValue)
         {
-            throw new NotImplementedException();
+            int searchedValueAsInt;
+
+            if (searchField == null)
+            {
+                throw new InvalidDataException(Constants.CustomerSearchFieldCannotBeNull);
+            }
+            else if (searchValue == null)
+            {
+                throw new InvalidDataException(Constants.CustomerSearchValueCannotBeNull);
+            }
+            
+            var foundCustomer = new List<Customer>();
+            switch (searchField)
+            {
+                case "id":
+                {
+                    if (!int.TryParse(searchValue, out searchedValueAsInt))
+                    {
+                        throw new InvalidDataException(Constants.CustomerSearchValueWithFieldTypeIdMustBeANumber);
+                    }
+                    else if (int.Parse(searchValue) < 1)
+                    {
+                        throw new InvalidDataException(Constants.CustomerIdMustBeAboveZero);
+                    }
+
+                    foreach (var customer in GetCustomers())
+                    {
+                        if (customer.Id.ToString().Equals(searchValue))
+                        {
+                            foundCustomer.Add(customer);
+                        }
+                        else throw new InvalidDataException(Constants.CustomerSearchValueWithFieldTypeIdMustBeANumber);
+
+                    }
+                    break;
+                }
+                case "firstnames":
+                    foreach (var customer in GetCustomers())
+                    {
+                        if (customer.FirstName.Equals(searchValue))
+                        {
+                            foundCustomer.Add(customer);
+                        }
+                    }
+
+                    if (foundCustomer.Count == 0)
+                    {
+                        throw new InvalidDataException(Constants.CustomerSearchFieldNotFound);
+                    }
+
+                    break;
+            }
+            {
+                return foundCustomer;
+            }
         }
     }
 }
